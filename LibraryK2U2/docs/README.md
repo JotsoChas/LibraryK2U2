@@ -16,3 +16,19 @@ Påbörjade att bygga databasen i SSMS.
 
 ### 2025-11-25
 - Skrev Query Designer
+
+
+### --->2025-12-10
+- Skapade två views:
+v_ActiveLoans (ReturnDate IS NULL)
+v_ReturnedLoans (ReturnDate IS NOT NULL)
+
+- Skapade två stored procedures:
+RegisterLoan (Lånar bok och sätter DueDate +14 dagar)
+ReturnBook (Återlämnar bok och skriver ReturnDate)
+
+- Skapade trigger:
+ trg_OnReturnBook (aktiveras när ReturnDate uppdateras)
+
+- Strukturerade mappstruktur med sql-filer
+  
