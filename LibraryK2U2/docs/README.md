@@ -32,5 +32,12 @@ ReturnBook (Återlämnar bok och skriver ReturnDate)
 
 - Strukturerade mappstruktur med sql-filer
 
+### 2025-12-12
+- Implementerade EF Database First genom att scaffolda hela databasen
+- Säkerställde fungerande anslutning mellan EF Core och databasen
+- Verifierade att tabellen Book scaffoldades korrekt
 
-  
+### 2025-12-13 
+- Verifierade att tabeller och vyer (Member, Loan, ActiveLoans, ReturnedLoans) scaffoldades korrekt
+- Testade läsning av samtliga DbSet via ett enkelt konsolprogram för att bekräfta korrekt koppling
+- Testet säkerställde att anslutningen upprätades korrekt
