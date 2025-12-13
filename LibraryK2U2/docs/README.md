@@ -31,4 +31,6 @@ ReturnBook (Återlämnar bok och skriver ReturnDate)
  trg_OnReturnBook (aktiveras när ReturnDate uppdateras)
 
 - Strukturerade mappstruktur med sql-filer
+
+
   
