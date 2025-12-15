@@ -71,3 +71,40 @@ ReturnBook (Återlämnar bok och skriver ReturnDate)
 - ROLLBACK stoppar ändringar vid fel.
 - Databasen hålls konsekvent i båda fallen.
 - Detta visar att transaktionshanteringen fungerar korrekt.
+
+### 2025-12-14
+### Index och execution plan
+
+- Jag testade en vanlig fråga mot tabellen Loan som hämtar alla aktiva lån
+(där ReturnDate är NULL).
+- Först körde jag frågan utan något extra index för att se hur SQL Server
+hanterar den som standard.
+
+- Execution plan visade att SQL Server använde en Clustered Index Scan.
+Det betyder att hela tabellen lästes igenom för att hitta rätt rader.
+- Bild: index_before_returndate
+
+- Därefter skapade jag ett vanligt nonclustered index på kolumnen ReturnDate
+och körde samma fråga igen.
+- Trots detta fortsatte SQL Server att använda Clustered Index Scan.
+- Anledningen är att indexet innehåller både NULL och NOT NULL och därför
+inte hjälper tillräckligt mycket för just denna fråga.
+- Bild: index_after_returndate
+
+- Jag skapade sedan ett filtered nonclustered index som endast innehåller
+rader där ReturnDate IS NULL.
+- Detta index är anpassat specifikt för frågan som hämtar aktiva lån.
+- Vid körning med detta index kan SQL Server välja en mer effektiv execution plan eftersom
+färre rader behöver läsas.
+- Bild: index_after_filtered_returndate
+
+## Sammanfattning
+- Utan index läses hela tabellen.
+- Ett vanligt nonclustered index räcker inte i detta fall.
+- Ett filtered index är bättre anpassat för frågan.
+- Eftersom datamängden är liten väljer SQL Server ändå ofta scan,
+men indexlösningen är korrekt och fungerar bättre när datamängden växer.
+- Detta visar hur SQL Server väljer execution plan baserat på kostnad
+och inte bara på om ett index finns.
+
+
