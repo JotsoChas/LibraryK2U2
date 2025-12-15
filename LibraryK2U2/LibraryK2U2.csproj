@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="docs\images\indexes\" />
+    <Folder Include="docs\images\concurrency\" />
   </ItemGroup>
 
 </Project>

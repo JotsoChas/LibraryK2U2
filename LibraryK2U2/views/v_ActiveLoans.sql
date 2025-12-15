@@ -1,4 +1,7 @@
-﻿CREATE VIEW ActiveLoans AS
+﻿-- View that displays all active loans in the library system.
+-- The view combines loan, book and member information
+-- and only includes loans that have not yet been returned.
+CREATE VIEW ActiveLoans AS
 SELECT 
 l.LoanId,
 b.Title AS BookTitle,
