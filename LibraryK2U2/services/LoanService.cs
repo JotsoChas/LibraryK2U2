@@ -1,9 +1,9 @@
-﻿using LibraryK2U2.data;
+﻿using System;
+using System.Linq;
+using LibraryK2U2.data;
 using LibraryK2U2.helpers;
 using LibraryK2U2.models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
 
 namespace LibraryK2U2.services
 {
@@ -11,113 +11,352 @@ namespace LibraryK2U2.services
     {
         public void RegisterLoan()
         {
-            ConsoleHelper.WriteHeader("Register Loan");
+            using var db = new LibraryDBContext();
 
-            var bookIdInput = ConsoleHelper.ReadInput("Book ID");
-            var memberIdInput = ConsoleHelper.ReadInput("Member ID");
+            // Books without active loans
+            var availableBooks = db.Books
+                .Where(b => !db.Loans.Any(l =>
+                    l.BookId == b.BookId &&
+                    l.ReturnDate == null))
+                .Select(b => new
+                {
+                    b.BookId,
+                    Label = ConsoleHelper.FormatBookMenuRow(
+                        b.BookId,
+                        b.Title,
+                        b.Author)
+                })
+                .ToList();
 
-            if (!int.TryParse(bookIdInput, out int bookId) ||
-                !int.TryParse(memberIdInput, out int memberId))
+            if (!availableBooks.Any())
             {
-                ConsoleHelper.Warning("Invalid Book ID or Member ID");
+                ConsoleHelper.Info("No available books");
                 ConsoleHelper.Pause();
                 return;
             }
 
-            using var db = new LibraryDBContext();
-            using var transaction = db.Database.BeginTransaction();
+            int? selectedBookId = null;
 
-            try
+            var bookMenu = new MenuBuilder("SELECT BOOK");
+
+            foreach (var b in availableBooks)
             {
-                // Check if book already has an active loan
-                bool bookIsLoaned = db.Loans
-                    .Any(l => l.BookId == bookId && l.ReturnDate == null);
-
-                if (bookIsLoaned)
-                {
-                    ConsoleHelper.Warning("Book is already loaned");
-                    transaction.Rollback();
-                    ConsoleHelper.Pause();
-                    return;
-                }
-
-                var loan = new Loan
-                {
-                    BookId = bookId,
-                    MemberId = memberId,
-                    LoanDate = DateOnly.FromDateTime(DateTime.Today),
-                    DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14)),
-                    ReturnDate = null
-                };
-
-                db.Loans.Add(loan);
-                db.SaveChanges();
-
-                transaction.Commit();
-
-                ConsoleHelper.Success("Loan registered successfully");
-            }
-            catch
-            {
-                transaction.Rollback();
-                ConsoleHelper.Error("Failed to register loan");
+                var id = b.BookId;
+                bookMenu.Add(b.Label, () => selectedBookId = id);
             }
 
-            ConsoleHelper.Pause();
+            bookMenu
+                .Back()
+                .CloseAfterSelection()
+                .Run();
+
+            if (selectedBookId == null)
+                return;
+
+            SelectMemberAndCreateLoan(db, selectedBookId.Value);
+        }
+
+        // Member selection and loan creation
+        private void SelectMemberAndCreateLoan(LibraryDBContext db, int bookId)
+        {
+            var members = db.Members
+                .Select(m => new
+                {
+                    m.MemberId,
+                    Label = ConsoleHelper.FormatMemberMenuRow(
+                        m.MemberId,
+                        m.FirstName,
+                        m.LastName)
+                })
+                .ToList();
+
+            if (!members.Any())
+            {
+                ConsoleHelper.Info("No members found");
+                ConsoleHelper.Pause();
+                return;
+            }
+
+            var menu = new MenuBuilder("SELECT MEMBER");
+
+            foreach (var m in members)
+            {
+                var memberId = m.MemberId;
+
+                menu.Add(m.Label, () =>
+                {
+                    using var tx = db.Database.BeginTransaction();
+
+                    try
+                    {
+                        var loan = new Loan
+                        {
+                            BookId = bookId,
+                            MemberId = memberId,
+                            LoanDate = DateOnly.FromDateTime(DateTime.Today),
+                            DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14)),
+                            ReturnDate = null
+                        };
+
+                        db.Loans.Add(loan);
+                        db.SaveChanges();
+                        tx.Commit();
+
+                        var member = db.Members.First(x => x.MemberId == memberId);
+                        var book = db.Books.First(x => x.BookId == bookId);
+
+                        Console.Clear();
+                        ConsoleHelper.Success("Loan registered successfully\n");
+                        Console.WriteLine($"Member: {member.FirstName} {member.LastName}");
+                        Console.WriteLine($"Book:   {book.Title}");
+                        Console.WriteLine($"Due:    {loan.DueDate}");
+
+                        ConsoleHelper.Pause();
+                    }
+                    catch
+                    {
+                        tx.Rollback();
+                        ConsoleHelper.Error("Failed to register loan");
+                        ConsoleHelper.Pause();
+                    }
+                });
+            }
+
+            menu
+                .Back()
+                .CloseAfterSelection()
+                .Run();
         }
 
         public void RegisterReturn()
         {
-            ConsoleHelper.WriteHeader("Register Return");
-
-            var loanIdInput = ConsoleHelper.ReadInput("Loan ID");
-
-            if (!int.TryParse(loanIdInput, out int loanId))
-            {
-                ConsoleHelper.Warning("Invalid Loan ID");
-                ConsoleHelper.Pause();
-                return;
-            }
-
             using var db = new LibraryDBContext();
 
-            var loan = db.Loans.FirstOrDefault(l => l.LoanId == loanId);
+            var activeLoans = db.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .Where(l => l.ReturnDate == null)
+                .ToList();
 
-            if (loan == null)
+            if (!activeLoans.Any())
             {
-                ConsoleHelper.Warning("Loan not found");
+                ConsoleHelper.Info("No active loans");
                 ConsoleHelper.Pause();
                 return;
             }
 
-            if (loan.ReturnDate != null)
+            var menu = new MenuBuilder("REGISTER RETURN");
+
+            foreach (var loan in activeLoans)
             {
-                ConsoleHelper.Warning("Book already returned");
+                menu.Add(
+                    ConsoleHelper.FormatLoanMenuRow(
+                        loan.LoanId,
+                        loan.Member.FirstName,
+                        loan.Member.LastName,
+                        loan.Book.Title,
+                        loan.DueDate
+                    ),
+                    () =>
+                    {
+                        loan.ReturnDate = DateOnly.FromDateTime(DateTime.Today);
+                        db.SaveChanges();
+
+                        Console.Clear();
+                        ConsoleHelper.Success("Loan returned successfully\n");
+                        Console.WriteLine($"Member: {loan.Member.FirstName} {loan.Member.LastName}");
+                        Console.WriteLine($"Book:   {loan.Book.Title}");
+
+                        ConsoleHelper.Pause();
+                    });
+            }
+
+            menu
+                .Back()
+                .CloseAfterSelection()
+                .Run();
+        }
+
+        public void ForceReturn()
+        {
+            using var db = new LibraryDBContext();
+
+            var activeLoans = db.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .Where(l => l.ReturnDate == null)
+                .ToList();
+
+            if (!activeLoans.Any())
+            {
+                ConsoleHelper.Info("No active loans");
                 ConsoleHelper.Pause();
                 return;
             }
 
-            loan.ReturnDate = DateOnly.FromDateTime(DateTime.Today);
-            db.SaveChanges();
+            var menu = new MenuBuilder("FORCE RETURN");
 
-            ConsoleHelper.Success("Book returned successfully");
-            ConsoleHelper.Pause();
+            foreach (var loan in activeLoans)
+            {
+                menu.Add(
+                    ConsoleHelper.FormatLoanMenuRow(
+                        loan.LoanId,
+                        loan.Member.FirstName,
+                        loan.Member.LastName,
+                        loan.Book.Title,
+                        loan.DueDate
+                    ),
+                    () =>
+                    {
+                        loan.ReturnDate = DateOnly.FromDateTime(DateTime.Today);
+                        db.SaveChanges();
+
+                        Console.Clear();
+                        ConsoleHelper.Success("Loan force-returned successfully\n");
+                        Console.WriteLine($"Member: {loan.Member.FirstName} {loan.Member.LastName}");
+                        Console.WriteLine($"Book:   {loan.Book.Title}");
+
+                        ConsoleHelper.Pause();
+                    });
+            }
+
+            menu
+                .Back()
+                .CloseAfterSelection()
+                .Run();
+        }
+
+        public void ChangeDueDate()
+        {
+            using var db = new LibraryDBContext();
+
+            var activeLoans = db.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .Where(l => l.ReturnDate == null)
+                .ToList();
+
+            if (!activeLoans.Any())
+            {
+                ConsoleHelper.Info("No active loans");
+                ConsoleHelper.Pause();
+                return;
+            }
+
+            var menu = new MenuBuilder("CHANGE DUE DATE");
+
+            foreach (var loan in activeLoans)
+            {
+                menu.Add(
+                    ConsoleHelper.FormatLoanMenuRow(
+                        loan.LoanId,
+                        loan.Member.FirstName,
+                        loan.Member.LastName,
+                        loan.Book.Title,
+                        loan.DueDate
+                    ),
+                    () =>
+                    {
+                        Console.Clear();
+                        ConsoleHelper.WriteHeader("CHANGE DUE DATE");
+
+                        Console.WriteLine($"Member: {loan.Member.FirstName} {loan.Member.LastName}");
+                        Console.WriteLine($"Book:   {loan.Book.Title}");
+                        Console.WriteLine($"Current due date: {loan.DueDate}\n");
+
+                        var input = ConsoleHelper.ReadInputWithBack("New due date (yyyy-mm-dd)");
+                        if (input == null)
+                            return;
+
+                        if (!DateOnly.TryParse(input, out var newDate))
+                        {
+                            ConsoleHelper.Warning("Invalid date");
+                            ConsoleHelper.Pause();
+                            return;
+                        }
+
+                        var oldDate = loan.DueDate;
+                        loan.DueDate = newDate;
+                        db.SaveChanges();
+
+                        Console.Clear();
+                        ConsoleHelper.Success("Due date updated successfully\n");
+                        Console.WriteLine($"Member: {loan.Member.FirstName} {loan.Member.LastName}");
+                        Console.WriteLine($"Book:   {loan.Book.Title}");
+                        Console.WriteLine($"Due:    {oldDate} -> {newDate}");
+
+                        ConsoleHelper.Pause();
+                    });
+            }
+
+            menu
+                .Back()
+                .CloseAfterSelection()
+                .Run();
         }
 
         public void ShowActiveLoans()
         {
-            ConsoleHelper.WriteHeader("Active Loans");
+            ConsoleHelper.WriteHeader("ACTIVE LOANS");
 
+            var input = ConsoleHelper.ReadInputWithBack(
+                "How many loans to list (Enter = 10, type 'all' for all)"
+            );
+
+            if (input == null)
+                return;
+
+            int? limit = 10;
+
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                if (input.Equals("all", StringComparison.OrdinalIgnoreCase))
+                    limit = null;
+                else if (int.TryParse(input, out var parsed) && parsed > 0)
+                    limit = parsed;
+            }
+
+            new MenuBuilder("SORT LOANS BY")
+                .Add("Loan ID (newest first)", () => RenderActiveLoans(1, limit))
+                .Add("Due date (earliest first)", () => RenderActiveLoans(2, limit))
+                .Add("Due date (latest first)", () => RenderActiveLoans(3, limit))
+                .Add("Member name (A-Ö)", () => RenderActiveLoans(4, limit))
+                .Add("Book title (A-Ö)", () => RenderActiveLoans(5, limit))
+                .CloseAfterSelection()
+                .Run();
+
+            ConsoleHelper.Pause();
+        }
+
+        private void RenderActiveLoans(int sortChoice, int? limit)
+        {
             using var db = new LibraryDBContext();
 
-            var loans = db.Loans
+            IQueryable<Loan> query = db.Loans
                 .Include(l => l.Book)
                 .Include(l => l.Member)
-                .Where(l => l.ReturnDate == null)
+                .Where(l => l.ReturnDate == null);
+
+            query = sortChoice switch
+            {
+                2 => query.OrderBy(l => l.DueDate),
+                3 => query.OrderByDescending(l => l.DueDate),
+                4 => query.OrderBy(l => l.Member.FirstName)
+                          .ThenBy(l => l.Member.LastName)
+                          .ThenBy(l => l.Member.MemberId),
+                5 => query.OrderBy(l => l.Book.Title),
+                _ => query.OrderByDescending(l => l.LoanId)
+            };
+
+            if (limit.HasValue)
+                query = query.Take(limit.Value);
+
+            var loans = query
                 .Select(l => new
                 {
                     l.LoanId,
-                    BookTitle = l.Book.Title,
+                    Book = l.Book.Title,
+                    MemberId = l.Member.MemberId,
                     MemberName = l.Member.FirstName + " " + l.Member.LastName,
                     l.LoanDate,
                     l.DueDate
@@ -127,6 +366,57 @@ namespace LibraryK2U2.services
             if (!loans.Any())
             {
                 ConsoleHelper.Info("No active loans");
+                return;
+            }
+
+            var headers = new[]
+            {
+                "Loan ID",
+                "Book",
+                "Member ID",
+                "Member",
+                "Loan date",
+                "Due date"
+            };
+
+            var rows = loans.Select(l => new[]
+            {
+                l.LoanId.ToString(),
+                l.Book,
+                l.MemberId.ToString(),
+                l.MemberName,
+                l.LoanDate.ToString(),
+                l.DueDate.ToString()
+            }).ToArray();
+
+            ConsoleHelper.PrintTable(headers, rows);
+        }
+
+        public void ShowAllLoans()
+        {
+            using var db = new LibraryDBContext();
+
+            var loans = db.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .OrderByDescending(l => l.LoanId)
+                .Select(l => new
+                {
+                    l.LoanId,
+                    Book = l.Book.Title,
+                    MemberId = l.Member.MemberId,
+                    MemberName = l.Member.FirstName + " " + l.Member.LastName,
+                    l.LoanDate,
+                    l.DueDate,
+                    Status = l.ReturnDate == null ? "ACTIVE" : "RETURNED"
+                })
+                .ToList();
+
+            ConsoleHelper.WriteHeader("ALL LOANS");
+
+            if (!loans.Any())
+            {
+                ConsoleHelper.Info("No loans found");
                 ConsoleHelper.Pause();
                 return;
             }
@@ -135,23 +425,67 @@ namespace LibraryK2U2.services
             {
                 "Loan ID",
                 "Book",
+                "Member ID",
                 "Member",
                 "Loan date",
-                "Due date"
+                "Due date",
+                "Status"
             };
 
-            var rows = loans
-                .Select(l => new[]
-                {
-                    l.LoanId.ToString(),
-                    l.BookTitle,
-                    l.MemberName,
-                    l.LoanDate.ToString(),
-                    l.DueDate.ToString()
-                })
-                .ToArray();
+            var rows = loans.Select(l => new[]
+            {
+                l.LoanId.ToString(),
+                l.Book,
+                l.MemberId.ToString(),
+                l.MemberName,
+                l.LoanDate.ToString(),
+                l.DueDate.ToString(),
+                l.Status
+            }).ToArray();
 
             ConsoleHelper.PrintTable(headers, rows);
+            ConsoleHelper.Pause();
+        }
+
+        public void ShowBlacklist()
+        {
+            using var db = new LibraryDBContext();
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            var overdueLoans = db.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .Where(l =>
+                    l.ReturnDate == null &&
+                    l.DueDate < today)
+                .OrderBy(l => l.DueDate)
+                .ToList();
+
+            Console.Clear();
+            ConsoleHelper.WriteHeader("BLACKLIST (OVERDUE LOANS)");
+
+            if (!overdueLoans.Any())
+            {
+                ConsoleHelper.Success("No overdue loans");
+                ConsoleHelper.Pause();
+                return;
+            }
+
+            foreach (var loan in overdueLoans)
+            {
+                int daysLate = today.DayNumber - loan.DueDate.DayNumber;
+
+                Console.WriteLine($"Member ID:  {loan.Member.MemberId}");
+                Console.WriteLine($"Member:     {loan.Member.FirstName} {loan.Member.LastName}");
+                Console.WriteLine($"Book:       {loan.Book.Title}");
+                Console.WriteLine($"Due:        {loan.DueDate}");
+                Console.WriteLine($"Overdue:    {daysLate} day{(daysLate == 1 ? "" : "s")}");
+                Console.WriteLine();
+                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine();
+            }
+
             ConsoleHelper.Pause();
         }
     }
