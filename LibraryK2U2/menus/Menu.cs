@@ -1,83 +1,46 @@
-﻿using System;
-using LibraryK2U2.helpers;
+﻿using LibraryK2U2.helpers;
 using LibraryK2U2.services;
 
 namespace LibraryK2U2.menus
 {
     public class Menu
     {
-        private readonly BookService bookService;
-        private readonly MemberService memberService;
-        private readonly LoanService loanService;
-
-        public Menu()
-        {
-            bookService = new BookService();
-            memberService = new MemberService();
-            loanService = new LoanService();
-        }
+        private readonly BookService bookService = new();
+        private readonly MemberService memberService = new();
+        private readonly LoanService loanService = new();
 
         public void DrawUI()
         {
-            bool running = true;
+            new MenuBuilder("LIBRARY SYSTEM")
+                .Add("Register new book", bookService.RegisterBook)
+                .Add("Register new member", memberService.RegisterMember)
+                .Add("Register loan", loanService.RegisterLoan)
+                .Add("Register return", loanService.RegisterReturn)
+                .Add("Show active loans", loanService.ShowActiveLoans)
+                .Add("Search books", bookService.SearchBooks)
+                .Exit("Exit system", ConfirmLogout)
+                .Run();
+        }
 
-            while (running)
+        // Confirms logout before exit
+        private bool ConfirmLogout()
+        {
+            Console.Clear();
+
+            if (!ConsoleHelper.Confirm("Are you sure you want to log out"))
             {
-                ConsoleHelper.WriteHeader("Library System");
-
-                Console.WriteLine("1. Register new book");
-                Console.WriteLine("2. Register new member");
-                Console.WriteLine("3. Register loan");
-                Console.WriteLine("4. Register return");
-                Console.WriteLine("5. Show active loans");
-                Console.WriteLine("6. Search books");
-                Console.WriteLine("7. More");
-                Console.WriteLine("0. Exit");
-
-                Console.WriteLine();
-                var choice = ConsoleHelper.ReadInput("Choose option");
-
-                switch (choice)
-                {
-                    case "1":
-                        bookService.RegisterBook();
-                        break;
-
-                    case "2":
-                        memberService.RegisterMember();
-                        break;
-
-                    case "3":
-                        loanService.RegisterLoan();
-                        break;
-
-                    case "4":
-                        loanService.RegisterReturn();
-                        break;
-
-                    case "5":
-                        loanService.ShowActiveLoans();
-                        break;
-
-                    case "6":
-                        bookService.SearchBooks();
-                        break;
-
-                    case "7":
-                        new AdminMenu().DrawUI();
-                        break;
-
-                    case "0":
-                        running = false;
-                        ConsoleHelper.Success("Goodbye!");
-                        break;
-
-                    default:
-                        ConsoleHelper.Warning("Invalid choice");
-                        ConsoleHelper.Pause();
-                        break;
-                }
+                Console.Clear();
+                return false;
             }
+
+            ExitApplication();
+            return true;
+        }
+
+        private void ExitApplication()
+        {
+            ExitScreen.Show();
+            Environment.Exit(0);
         }
     }
 }

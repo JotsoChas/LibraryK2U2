@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace Joco.ConsoleKit.Helpers
+namespace LibraryK2U2.helpers
 {
     public static class InputHelper
     {
-        // Reads input, ESC returns null (acts as Back)
+        // Reads a single character, ESC returns null
         public static string? Read(string label)
         {
             Console.Write($"{label}: ");

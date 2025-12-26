@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LibraryK2U2.helpers
 {
     public static class ConsoleHelper
     {
-        // ===============================
-        // HEADER / TITLES
-        // ===============================
-
         public static void WriteHeader(string title)
         {
             Console.Clear();
@@ -19,11 +12,6 @@ namespace LibraryK2U2.helpers
             Console.WriteLine($"\n========== {title.ToUpper()} ==========\n");
             Console.ResetColor();
         }
-
-
-        // ===============================
-        // STATUS MESSAGES
-        // ===============================
 
         public static void Success(string msg)
         {
@@ -58,36 +46,68 @@ namespace LibraryK2U2.helpers
             Console.WriteLine(msg);
         }
 
-
-        // ===============================
-        // INPUT (PLAIN)
-        // ===============================
-
         public static string ReadInput(string label)
         {
             Console.Write($"{label}: ");
             return Console.ReadLine()?.Trim() ?? string.Empty;
         }
 
-        // ESC returns "<ESC>" instead of text
-        public static string ReadInputEsc(string label)
+        // Waits for Enter before continuing
+        public static void Pause()
         {
-            Console.Write($"{label} (ESC to cancel): ");
-            var input = Console.ReadLine();
+            while (Console.KeyAvailable)
+                Console.ReadKey(true);
 
-            return input?.ToUpper() == "ESC"
-                ? "<ESC>"
-                : input?.Trim() ?? string.Empty;
+            Console.WriteLine("\nPress ENTER to return to the menu...");
+
+            while (true)
+            {
+                if (Console.ReadKey(true).Key == ConsoleKey.Enter)
+                    return;
+            }
         }
 
+        public static void PrintTable(string[] headers, params string[][] rows)
+        {
+            int columnCount = headers.Length;
+            int[] widths = new int[columnCount];
 
-        // ===============================
-        // INPUT – PIN WITH MASK + NUMPAD
-        // ===============================
+            for (int i = 0; i < columnCount; i++)
+            {
+                widths[i] = headers[i].Length;
 
-        // Reads PIN as 4 digits, masked with '*'
-        // Works with top-row digits and NumPad (NumLock on)
-        public static string ReadPinMasked(string label)
+                foreach (var row in rows)
+                {
+                    if (row.Length > i && row[i] != null)
+                        widths[i] = Math.Max(widths[i], row[i].Length);
+                }
+            }
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+
+            for (int i = 0; i < columnCount; i++)
+                Console.Write(headers[i].PadRight(widths[i] + 4));
+
+            Console.ResetColor();
+            Console.WriteLine("\n" + new string('-', widths.Sum() + columnCount * 4));
+
+            foreach (var row in rows)
+            {
+                for (int i = 0; i < columnCount; i++)
+                {
+                    string cell = row.Length > i ? row[i] ?? "" : "";
+                    Console.Write(cell.PadRight(widths[i] + 4));
+                }
+
+                Console.WriteLine();
+            }
+
+            Console.WriteLine();
+        }
+
+        // Allows ESC to cancel input
+        public static string? ReadInputWithBack(string label)
         {
             Console.Write($"{label}: ");
             var input = string.Empty;
@@ -96,116 +116,118 @@ namespace LibraryK2U2.helpers
             {
                 var key = Console.ReadKey(true);
 
-                // Accept digits from both main row and NumPad
-                if (char.IsDigit(key.KeyChar))
+                if (key.Key == ConsoleKey.Escape)
                 {
-                    if (input.Length < 4)
-                    {
-                        input += key.KeyChar;
-                        Console.Write("*");
-                    }
+                    Console.WriteLine();
+                    return null;
                 }
-                // Backspace support
-                else if (key.Key == ConsoleKey.Backspace && input.Length > 0)
+
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    return input.Trim();
+                }
+
+                if (key.Key == ConsoleKey.Backspace && input.Length > 0)
                 {
                     input = input[..^1];
                     Console.Write("\b \b");
+                    continue;
                 }
-                // Enter finishes input
-                else if (key.Key == ConsoleKey.Enter)
+
+                if (!char.IsControl(key.KeyChar))
                 {
-                    Console.WriteLine();
-                    return input;
+                    input += key.KeyChar;
+                    Console.Write(key.KeyChar);
                 }
             }
         }
 
-
-        // ===============================
-        // PAUSE FUNCTIONS
-        // ===============================
-
-        public static void Pause()
+        public static string FormatBookMenuRow(
+            int bookId,
+            string title,
+            string author)
         {
-            Console.WriteLine("\nPress any key to return to the menu...");
-            Console.ReadKey(true);
+            const int menuOffset = 6;
+            const int idWidth = 4;
+            const int titleWidth = 35;
+
+            var safeTitle = title.Length > titleWidth
+                ? title[..(titleWidth - 1)] + "…"
+                : title;
+
+            return
+                new string(' ', menuOffset) +
+                bookId.ToString().PadRight(idWidth) +
+                safeTitle.PadRight(titleWidth) +
+                author;
         }
 
-        public static void Pause(string msg)
+        public static string FormatMemberMenuRow(
+            int memberId,
+            string firstName,
+            string lastName)
         {
-            Console.WriteLine($"\n{msg}");
-            Console.ReadKey(true);
+            const int menuOffset = 6;
+            const int idWidth = 4;
+            const int firstNameWidth = 15;
+
+            return
+                new string(' ', menuOffset) +
+                memberId.ToString().PadRight(idWidth) +
+                firstName.PadRight(firstNameWidth) +
+                lastName;
         }
 
-
-        // ===============================
-        // TABLE PRINTING (ADMIN LIST USERS)
-        // ===============================
-
-        public static void PrintTable(string[] headers, params string[][] rows)
+        public static string FormatLoanMenuRow(
+            int loanId,
+            string firstName,
+            string lastName,
+            string bookTitle,
+            DateOnly dueDate)
         {
-            int[] widths = new int[headers.Length];
+            const int menuOffset = 6;
+            const int idWidth = 4;
+            const int nameWidth = 22;
+            const int bookWidth = 45;
 
-            for (int i = 0; i < headers.Length; i++)
+            var name = $"{firstName} {lastName}";
+            if (name.Length > nameWidth)
+                name = name[..(nameWidth - 1)] + "…";
+
+            var book = bookTitle.Length > bookWidth
+                ? bookTitle[..(bookWidth - 1)] + "…"
+                : bookTitle;
+
+            return
+                new string(' ', menuOffset) +
+                loanId.ToString().PadRight(idWidth) +
+                name.PadRight(nameWidth) +
+                book.PadRight(bookWidth) +
+                $"Due: {dueDate}";
+        }
+
+        // Requires Y or N followed by Enter
+        public static bool Confirm(string message)
+        {
+            while (true)
             {
-                widths[i] = Math.Max(
-                    headers[i].Length,
-                    rows.Length > 0 ? rows.Max(r => r[i].Length) : 0
-                );
+                Console.Write($"{message} (Y/N): ");
+                var input = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(input))
+                    continue;
+
+                input = input.Trim();
+
+                if (input.Equals("y", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (input.Equals("n", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                Console.WriteLine("Please enter Y or N and press Enter.");
             }
-
-            Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Yellow;
-
-            for (int i = 0; i < headers.Length; i++)
-                Console.Write(headers[i].PadRight(widths[i] + 4));
-
-            Console.ResetColor();
-            Console.WriteLine("\n" + new string('-', widths.Sum() + widths.Length * 4));
-
-            foreach (var row in rows)
-            {
-                for (int i = 0; i < row.Length; i++)
-                    Console.Write(row[i].PadRight(widths[i] + 4));
-                Console.WriteLine();
-            }
-
-            Console.WriteLine();
         }
-
-        // ===============================
-        // EXTRA UI ELEMENTS
-        // ===============================
-
-        // Clear screen safely
-        public static void ClearScreen() => Console.Clear();
-
-        public static void PauseWithMessage(string msg = "Press any key...")
-        {
-            Console.WriteLine($"\n{msg}");
-            Console.ReadKey(true);
-        }
-
-        // Draw a centered info box
-        public static void WriteBox(string text, ConsoleColor color = ConsoleColor.White)
-        {
-            int width = text.Length + 6;
-            string line = new string('■', width);
-
-            Console.ForegroundColor = color;
-            Console.WriteLine(line);
-            Console.WriteLine($"■  {text}  ■");
-            Console.WriteLine(line);
-            Console.ResetColor();
-        }
-
-        // Highlight section headings
-        public static void WriteHighlight(string text, ConsoleColor color = ConsoleColor.Yellow)
-        {
-            Console.ForegroundColor = color;
-            Console.WriteLine($">> {text}");
-            Console.ResetColor();
-        }
-
     }
 }
