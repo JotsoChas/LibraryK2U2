@@ -18,10 +18,10 @@ namespace LibraryK2U2
             // LibraryK2U2.dev.DbConnectionTest.Run();
             // LibraryK2U2.dev.KeyTest.Run();
 
-            // Intro screen (optional)
-            IntroScreen.Show();
+            //IntroScreen.Show();
 
-            var auth = new AuthService(new JsonUserRepository());
+            var userRepository = new JsonUserRepository();
+            var auth = new AuthService(userRepository);
 
             // Main application loop
             while (true)
@@ -32,7 +32,8 @@ namespace LibraryK2U2
 
                 // Route user by role
                 if (user.IsAdmin())
-                    new AdminMenu().DrawUI();
+                    new AdminMenu(auth).DrawUI();
+
                 else
                     new Menu().DrawUI();
             }

@@ -112,10 +112,22 @@ namespace LibraryK2U2.helpers
 
             string username = ConsoleHelper.ReadInput("Username");
 
-            if (auth.UnlockUser(username))
-                ConsoleHelper.Success("User unlocked");
-            else
-                ConsoleHelper.Error("User not found");
+            var result = auth.UnlockUser(username);
+
+            switch (result)
+            {
+                case AuthService.UnlockUserResult.Unlocked:
+                    ConsoleHelper.Success("User unlocked");
+                    break;
+
+                case AuthService.UnlockUserResult.NotBlocked:
+                    ConsoleHelper.Info("User is not blocked");
+                    break;
+
+                case AuthService.UnlockUserResult.UserNotFound:
+                    ConsoleHelper.Error("User not found");
+                    break;
+            }
 
             ConsoleHelper.Pause();
         }

@@ -447,6 +447,7 @@ namespace LibraryK2U2.services
             ConsoleHelper.Pause();
         }
 
+        //Current Overdue loans
         public void ShowBlacklist()
         {
             using var db = new LibraryDBContext();
@@ -476,11 +477,27 @@ namespace LibraryK2U2.services
             {
                 int daysLate = today.DayNumber - loan.DueDate.DayNumber;
 
+                var history = db.Loans
+                    .Where(l =>
+                        l.MemberId == loan.Member.MemberId &&
+                        l.ReturnDate != null &&
+                        l.ReturnDate > l.DueDate)
+                    .Select(l =>
+                        l.ReturnDate!.Value.DayNumber - l.DueDate.DayNumber)
+                    .ToList();
+
+                int previousOverdues = history.Count;
+                int totalDaysLate = history.Sum();
+
                 Console.WriteLine($"Member ID:  {loan.Member.MemberId}");
                 Console.WriteLine($"Member:     {loan.Member.FirstName} {loan.Member.LastName}");
                 Console.WriteLine($"Book:       {loan.Book.Title}");
                 Console.WriteLine($"Due:        {loan.DueDate}");
                 Console.WriteLine($"Overdue:    {daysLate} day{(daysLate == 1 ? "" : "s")}");
+                Console.WriteLine();
+                Console.WriteLine("History:");
+                Console.WriteLine($"- Previous overdue loans: {previousOverdues}");
+                Console.WriteLine($"- Total overdue days:     {totalDaysLate}");
                 Console.WriteLine();
                 Console.WriteLine("--------------------------------------------------");
                 Console.WriteLine();
@@ -488,5 +505,50 @@ namespace LibraryK2U2.services
 
             ConsoleHelper.Pause();
         }
+
+        public void ShowHistoricalOverdueLoans()
+        {
+            using var db = new LibraryDBContext();
+
+            var lateLoans = db.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .Where(l =>
+                    l.ReturnDate != null &&
+                    l.ReturnDate > l.DueDate)
+                .OrderByDescending(l => l.ReturnDate)
+                .ToList();
+
+            Console.Clear();
+            ConsoleHelper.WriteHeader("HISTORICAL OVERDUE LOANS");
+
+            if (!lateLoans.Any())
+            {
+                ConsoleHelper.Success("No historical overdue loans");
+                ConsoleHelper.Pause();
+                return;
+            }
+
+            foreach (var loan in lateLoans)
+            {
+                int daysLate =
+                    loan.ReturnDate!.Value.DayNumber -
+                    loan.DueDate.DayNumber;
+
+                Console.WriteLine($"Member ID:  {loan.Member.MemberId}");
+                Console.WriteLine($"Member:     {loan.Member.FirstName} {loan.Member.LastName}");
+                Console.WriteLine($"Book:       {loan.Book.Title}");
+                Console.WriteLine($"Due:        {loan.DueDate}");
+                Console.WriteLine($"Returned:   {loan.ReturnDate}");
+                Console.WriteLine($"Late by:    {daysLate} day{(daysLate == 1 ? "" : "s")}");
+                Console.WriteLine();
+                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine();
+            }
+
+            ConsoleHelper.Pause();
+        }
+
+
     }
 }

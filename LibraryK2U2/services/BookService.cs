@@ -358,6 +358,9 @@ namespace LibraryK2U2.services
                 .CloseAfterSelection()
                 .Run();
 
+            Console.Clear();
+            ConsoleHelper.WriteHeader("BOOKS LIST");
+
             using var db = new LibraryDBContext();
 
             IQueryable<Book> query = db.Books;

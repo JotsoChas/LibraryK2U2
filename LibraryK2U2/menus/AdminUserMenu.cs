@@ -1,6 +1,7 @@
 ﻿using LibraryK2U2.helpers;
 using LibraryK2U2.services;
 using System.Linq;
+using static LibraryK2U2.services.AuthService;
 
 namespace LibraryK2U2.menus
 {
@@ -85,10 +86,22 @@ namespace LibraryK2U2.menus
                 return;
             }
 
-            if (auth.UnlockUser(username))
-                ConsoleHelper.Success("User unlocked");
-            else
-                ConsoleHelper.Error("User not found");
+            var result = auth.UnlockUser(username);
+
+            switch (result)
+            {
+                case UnlockUserResult.Unlocked:
+                    ConsoleHelper.Success("User unlocked");
+                    break;
+
+                case UnlockUserResult.NotBlocked:
+                    ConsoleHelper.Info("User is not blocked");
+                    break;
+
+                case UnlockUserResult.UserNotFound:
+                    ConsoleHelper.Error("User not found");
+                    break;
+            }
 
             ConsoleHelper.Pause();
         }

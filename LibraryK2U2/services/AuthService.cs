@@ -121,20 +121,29 @@ namespace LibraryK2U2.services
         // Admin helpers
         public List<User> GetAllUsers() => repo.GetAll();
 
-        public bool UnlockUser(string username)
+        public enum UnlockUserResult
+        {
+            UserNotFound,
+            NotBlocked,
+            Unlocked
+        }
+
+        public UnlockUserResult UnlockUser(string username)
         {
             var user = repo.Get(username);
             if (user == null)
-                return false;
+                return UnlockUserResult.UserNotFound;
 
             if (!user.IsBlocked)
-                return false;
+                return UnlockUserResult.NotBlocked;
 
             user.ResetAttempts();
             repo.Update(user);
             repo.Save();
-            return true;
+
+            return UnlockUserResult.Unlocked;
         }
+
 
         public bool ResetPin(string username, string newPin)
         {
