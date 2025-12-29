@@ -6,12 +6,18 @@ namespace LibraryK2U2.menus
 {
     public class AdminMenu
     {
-        private readonly Menu libraryMenu = new();
+        private readonly AuthService auth;
+        private readonly AdminLibraryMenu libraryMenu = new();
+
+        public AdminMenu(AuthService authService)
+        {
+            auth = authService;
+        }
+
 
         private void DrawUserAdminMenu()
         {
-            var authService = new AuthService(new JsonUserRepository());
-            var userMenu = new AdminUserMenu(authService);
+            var userMenu = new AdminUserMenu(auth);
             userMenu.DrawUI();
         }
 
@@ -72,6 +78,7 @@ namespace LibraryK2U2.menus
                 .Add("Force return loan", loanService.ForceReturn)
                 .Add("Change due date", loanService.ChangeDueDate)
                 .Add("Blacklist (overdue loans)", loanService.ShowBlacklist)
+                .Add("Historical overdue loans", loanService.ShowHistoricalOverdueLoans)
                 .Back("Back")
                 .CloseAfterSelection()
                 .Run();
@@ -90,13 +97,7 @@ namespace LibraryK2U2.menus
                 .Run();
         }
 
-        private void ExitApplication()
-        {
-            ExitScreen.Show();
-            Environment.Exit(0);
-        }
-
-        // Confirms logout before exiting
+        // Confirms logout before exit
         private bool ConfirmLogout()
         {
             Console.Clear();
@@ -107,7 +108,6 @@ namespace LibraryK2U2.menus
                 return false;
             }
 
-            ExitApplication();
             return true;
         }
     }

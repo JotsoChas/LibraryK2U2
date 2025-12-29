@@ -3,7 +3,7 @@ using LibraryK2U2.services;
 
 namespace LibraryK2U2.menus
 {
-    public class Menu
+    public class AdminLibraryMenu
     {
         private readonly BookService bookService = new();
         private readonly MemberService memberService = new();
@@ -18,24 +18,8 @@ namespace LibraryK2U2.menus
                 .Add("Register return", loanService.RegisterReturn)
                 .Add("Show active loans", loanService.ShowActiveLoans)
                 .Add("Search books", bookService.SearchBooks)
-                .Exit("Exit system", ConfirmLogout)
+                .Back("Back")
                 .Run();
-
         }
-
-        // Confirms logout before exit
-        private bool ConfirmLogout()
-        {
-            Console.Clear();
-
-            if (!ConsoleHelper.Confirm("Are you sure you want to log out"))
-            {
-                Console.Clear();
-                return false;
-            }
-
-            return true;
-        }
-
     }
 }
