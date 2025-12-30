@@ -14,7 +14,6 @@ namespace LibraryK2U2.menus
             auth = authService;
         }
 
-
         private void DrawUserAdminMenu()
         {
             var userMenu = new AdminUserMenu(auth);
@@ -26,7 +25,7 @@ namespace LibraryK2U2.menus
             new MenuBuilder("ADMIN MENU")
                 .Add("Library system", libraryMenu.DrawUI)
                 .Add("Administration", DrawAdminSections)
-                .Exit("Exit system", ConfirmLogout)
+                .Exit("Exit system", ConsoleHelper.ConfirmLogout)
                 .Run();
         }
 
@@ -64,6 +63,8 @@ namespace LibraryK2U2.menus
                 .Add("List all members", memberService.ListAllMembers)
                 .Add("Edit member", memberService.EditMember)
                 .Add("Delete member", memberService.DeleteMember)
+                .Add("Block member", memberService.BlockMember)
+                .Add("Unblock member", memberService.UnblockMember)
                 .Back("Back")
                 .CloseAfterSelection()
                 .Run();
@@ -95,20 +96,6 @@ namespace LibraryK2U2.menus
                 .Back("Back")
                 .CloseAfterSelection()
                 .Run();
-        }
-
-        // Confirms logout before exit
-        private bool ConfirmLogout()
-        {
-            Console.Clear();
-
-            if (!ConsoleHelper.Confirm("Are you sure you want to log out"))
-            {
-                Console.Clear();
-                return false;
-            }
-
-            return true;
         }
     }
 }

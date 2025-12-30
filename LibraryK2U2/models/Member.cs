@@ -11,5 +11,7 @@ public partial class Member
 
     public string LastName { get; set; } = null!;
 
+    public bool IsBlocked { get; set; }
+
     public virtual ICollection<Loan> Loans { get; set; } = new List<Loan>();
 }

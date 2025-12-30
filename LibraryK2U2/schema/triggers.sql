@@ -13,4 +13,3 @@ PRINT 'Book updated as returned.';
 END
 END;
 GO
-
