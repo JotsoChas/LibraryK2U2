@@ -135,3 +135,13 @@ ON Loan (ReturnDate);
 CREATE NONCLUSTERED INDEX IX_Loan_ReturnDate_Null
 ON Loan (ReturnDate)
 WHERE ReturnDate IS NULL;
+
+-- Adds a column that marks whether a member is blocked or not.
+-- Default value 0 means the member is not blocked.
+ALTER TABLE Member
+ADD IsBlocked BIT NOT NULL
+DEFAULT 0;
+
+-- Shows all members and their blocked status.
+SELECT MemberId, FirstName, LastName, IsBlocked
+FROM Member;

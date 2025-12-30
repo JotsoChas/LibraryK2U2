@@ -18,24 +18,9 @@ namespace LibraryK2U2.menus
                 .Add("Register return", loanService.RegisterReturn)
                 .Add("Show active loans", loanService.ShowActiveLoans)
                 .Add("Search books", bookService.SearchBooks)
-                .Exit("Exit system", ConfirmLogout)
+                .Exit("Exit menu", ConsoleHelper.ConfirmLogout)
+
                 .Run();
-
         }
-
-        // Confirms logout before exit
-        private bool ConfirmLogout()
-        {
-            Console.Clear();
-
-            if (!ConsoleHelper.Confirm("Are you sure you want to log out"))
-            {
-                Console.Clear();
-                return false;
-            }
-
-            return true;
-        }
-
     }
 }

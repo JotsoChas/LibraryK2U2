@@ -27,7 +27,7 @@ namespace LibraryK2U2.data
         public virtual DbSet<Member> Members { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning Connection string should be moved out of source code for production use
+        #warning Connection string should be moved out of source code for production use
             => optionsBuilder.UseSqlServer(
                 "Server=(localdb)\\MSSQLLocalDB;Database=LibraryDB;Trusted_Connection=True;TrustServerCertificate=True"
             );

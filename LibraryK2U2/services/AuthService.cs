@@ -11,22 +11,39 @@ namespace LibraryK2U2.services
     {
         private readonly IUserRepository repo;
 
+        // Inject user repository
         public AuthService(IUserRepository repository)
         {
             repo = repository;
         }
 
-        // Handles user login
+        // Handles the full login flow
         public User? Login()
         {
             while (true)
             {
                 ConsoleHelper.WriteHeader("LOGIN");
+                ShowLoginHeader();
 
-                var username = ConsoleHelper.ReadInputWithBack("Username");
+                int consoleWidth = Console.WindowWidth;
+                int formWidth = "Username: ".Length + 10;
+                int leftPadding = Math.Max((consoleWidth - formWidth) / 2, 0);
+
+                Console.SetCursorPosition(leftPadding, Console.CursorTop);
+
+                // Read username with ESC support
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write("Username");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                var username = ConsoleHelper.ReadInputWithBack("");
+                Console.ResetColor();
+
                 if (username == null)
                     return null;
 
+                // Fetch user from repository
                 var user = repo.Get(username);
 
                 if (user == null)
@@ -36,14 +53,20 @@ namespace LibraryK2U2.services
                     continue;
                 }
 
+                // Blocked users cannot proceed
                 if (user.IsBlocked)
                 {
                     ShowBlockedScreen(user);
                     return null;
                 }
 
+                // PIN validation loop
                 while (user.FailedAttempts < user.MaxAttempts)
                 {
+                    Console.SetCursorPosition(leftPadding, Console.CursorTop);
+                    Console.Write(new string(' ', 30));
+                    Console.SetCursorPosition(leftPadding, Console.CursorTop);
+
                     var pin = ReadPin("PIN");
 
                     if (user.ValidatePin(pin))
@@ -52,8 +75,23 @@ namespace LibraryK2U2.services
                         repo.Update(user);
                         repo.Save();
 
-                        ConsoleHelper.Success($"Welcome {user.DisplayName}");
-                        ConsoleHelper.Pause();
+                        Console.CursorVisible = false;
+
+                        Console.WriteLine();
+                        Console.SetCursorPosition(leftPadding, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"✔ Welcome {user.DisplayName}");
+                        Console.ResetColor();
+
+                        Console.WriteLine();
+                        Console.SetCursorPosition(leftPadding, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.WriteLine("Press ENTER to proceed");
+                        Console.ResetColor();
+
+                        Console.ReadKey(true);
+                        Console.CursorVisible = true;
+
                         return user;
                     }
 
@@ -62,16 +100,21 @@ namespace LibraryK2U2.services
                     repo.Save();
 
                     int left = user.MaxAttempts - user.FailedAttempts;
-                    ConsoleHelper.Warning($"Wrong PIN ({left} attempts left)");
+                    Console.WriteLine();
+                    Console.SetCursorPosition(leftPadding, Console.CursorTop);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"⚠  Wrong PIN ({left} attempts left)");
+                    Console.ResetColor();
                 }
 
+                // Lock account after max attempts
                 repo.Save();
                 ShowBlockedScreen(user);
                 return null;
             }
         }
 
-        // Registers a new user
+        // Registers a new user account
         public void RegisterUser(bool isAdmin = false)
         {
             while (true)
@@ -89,6 +132,7 @@ namespace LibraryK2U2.services
                     continue;
                 }
 
+                // Prevent duplicate usernames
                 if (repo.Get(username) != null)
                 {
                     ConsoleHelper.Error("User already exists");
@@ -102,6 +146,7 @@ namespace LibraryK2U2.services
 
                 var pin = ReadPin("PIN (4 digits)");
 
+                // Validate PIN format
                 if (pin.Length != 4 || !pin.All(char.IsDigit))
                 {
                     ConsoleHelper.Warning("PIN must be exactly 4 digits");
@@ -118,7 +163,7 @@ namespace LibraryK2U2.services
             }
         }
 
-        // Admin helpers
+        // Returns all users (admin use)
         public List<User> GetAllUsers() => repo.GetAll();
 
         public enum UnlockUserResult
@@ -128,6 +173,7 @@ namespace LibraryK2U2.services
             Unlocked
         }
 
+        // Unlocks a blocked user account
         public UnlockUserResult UnlockUser(string username)
         {
             var user = repo.Get(username);
@@ -144,7 +190,7 @@ namespace LibraryK2U2.services
             return UnlockUserResult.Unlocked;
         }
 
-
+        // Resets PIN for non-admin users
         public bool ResetPin(string username, string newPin)
         {
             var user = repo.Get(username);
@@ -161,6 +207,7 @@ namespace LibraryK2U2.services
             return true;
         }
 
+        // Deletes a non-admin user
         public bool DeleteUser(string username)
         {
             var user = repo.Get(username);
@@ -175,34 +222,102 @@ namespace LibraryK2U2.services
             return true;
         }
 
-        // Shows blocked account information
+        // Draws centered login ASCII header
+        private void ShowLoginHeader()
+        {
+            Console.Clear();
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+
+            string[] logo =
+            {
+                "██╗      ██████╗  ██████╗ ██╗███╗   ██╗",
+                "██║     ██╔═══██╗██╔════╝ ██║████╗  ██║",
+                "██║     ██║   ██║██║  ███╗██║██╔██╗ ██║",
+                "██║     ██║   ██║██║   ██║██║██║╚██╗██║",
+                "███████╗╚██████╔╝╚██████╔╝██║██║ ╚████║",
+                "╚══════╝ ╚═════╝  ╚═════╝ ╚═╝╚═╝  ╚═══╝"
+            };
+
+            int consoleWidth = Console.WindowWidth;
+            int logoWidth = logo[0].Length;
+            int leftPadding = Math.Max((consoleWidth - logoWidth) / 2, 0);
+
+            foreach (var line in logo)
+            {
+                Console.WriteLine(new string(' ', leftPadding) + line);
+            }
+
+            Console.WriteLine();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+
+            string subtitle1 = "Library Management System";
+            string subtitle2 = "Secure access required";
+
+            Console.WriteLine(new string(' ', (consoleWidth - subtitle1.Length) / 2) + subtitle1);
+            Console.WriteLine(new string(' ', (consoleWidth - subtitle2.Length) / 2) + subtitle2);
+
+            Console.WriteLine();
+            Console.ResetColor();
+        }
+
+        // Displays locked account information
         private void ShowBlockedScreen(User user)
         {
             Console.Clear();
-            ConsoleHelper.WriteHeader("ACCOUNT LOCKED");
-
             Console.WriteLine();
-            ConsoleHelper.Warning($"User '{user.Username}' is blocked");
-
             Console.WriteLine();
-            ConsoleHelper.Info("Too many incorrect PIN attempts.");
-            ConsoleHelper.Info("Contact an administrator to unlock the account.");
-
             Console.WriteLine();
-            Console.WriteLine("Phone : 0200 112 233");
-            Console.WriteLine("Email : support@libraryAdmin.com");
-            Console.WriteLine("Hours : Mon-Fri 08-17");
+            Console.CursorVisible = false;
 
-            Console.WriteLine();
-            ConsoleHelper.Info(
-                "After your account has been unlocked by an administrator,\n" +
-                "restart the application for the change to take effect."
-            );
+            int consoleWidth = Console.WindowWidth;
+            int consoleHeight = Console.WindowHeight;
 
-            Console.WriteLine();
-            ConsoleHelper.Warning("You cannot log in until the account is unlocked.");
+            string[] lines =
+            {
+                "ACCOUNT LOCKED",
+                "",
+                $"User '{user.Username}' is blocked",
+                "",
+                "Too many incorrect PIN attempts.",
+                "Contact an administrator to unlock the account.",
+                "",
+                "Phone : 0200 112 233",
+                "Email : support@libraryAdmin.com",
+                "Hours : Mon-Fri 08-17",
+                "",
+                "After your account has been unlocked by an administrator,",
+                "restart the application for the change to take effect.",
+                "",
+                "You cannot log in until the account is unlocked."
+            };
 
-            ConsoleHelper.Pause();
+            int blockHeight = lines.Length + 2;
+            int startTop = Math.Max((consoleHeight - blockHeight) / 2, 0);
+
+            Console.SetCursorPosition(0, startTop);
+
+            foreach (var line in lines)
+            {
+                int leftPadding = Math.Max((consoleWidth - line.Length) / 2, 0);
+
+                Console.SetCursorPosition(leftPadding, Console.CursorTop);
+
+                if (line.Contains("User"))
+                    ConsoleHelper.Warning(line);
+                else if (line.Contains("You cannot"))
+                    ConsoleHelper.Warning(line);
+                else if (line.Contains("Too many") || line.Contains("Contact"))
+                    ConsoleHelper.Info(line);
+                else
+                    Console.WriteLine(line);
+
+            }
+            Console.ReadKey();
+            Console.CursorVisible = true;
         }
 
         // Reads masked PIN input

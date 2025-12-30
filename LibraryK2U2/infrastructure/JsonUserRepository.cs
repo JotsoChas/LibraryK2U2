@@ -62,7 +62,6 @@ namespace LibraryK2U2.infrastructure
             }
         }
 
-
         public User? Get(string username)
         {
             return users.FirstOrDefault(u =>

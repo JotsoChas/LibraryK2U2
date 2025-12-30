@@ -85,6 +85,16 @@ namespace LibraryK2U2.services
 
                 menu.Add(m.Label, () =>
                 {
+                    var member = db.Members.First(x => x.MemberId == memberId);
+
+                    if (member.IsBlocked)
+                    {
+                        Console.Clear();
+                        ConsoleHelper.Error("Member is blocked and cannot borrow books");
+                        ConsoleHelper.Pause();
+                        return;
+                    }
+
                     using var tx = db.Database.BeginTransaction();
 
                     try
@@ -102,7 +112,6 @@ namespace LibraryK2U2.services
                         db.SaveChanges();
                         tx.Commit();
 
-                        var member = db.Members.First(x => x.MemberId == memberId);
                         var book = db.Books.First(x => x.BookId == bookId);
 
                         Console.Clear();
@@ -120,6 +129,7 @@ namespace LibraryK2U2.services
                         ConsoleHelper.Pause();
                     }
                 });
+
             }
 
             menu
@@ -548,7 +558,5 @@ namespace LibraryK2U2.services
 
             ConsoleHelper.Pause();
         }
-
-
     }
 }

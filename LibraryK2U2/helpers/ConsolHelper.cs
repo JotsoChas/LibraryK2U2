@@ -41,11 +41,6 @@ namespace LibraryK2U2.helpers
             Console.ResetColor();
         }
 
-        public static void Print(string msg)
-        {
-            Console.WriteLine(msg);
-        }
-
         public static string ReadInput(string label)
         {
             Console.Write($"{label}: ");
@@ -228,6 +223,20 @@ namespace LibraryK2U2.helpers
 
                 Console.WriteLine("Please enter Y or N and press Enter.");
             }
+        }
+
+        // Confirms logout before exit
+        public static bool ConfirmLogout()
+        {
+            Console.Clear();
+
+            if (!Confirm("Are you sure you want to log out"))
+            {
+                Console.Clear();
+                return false;
+            }
+
+            return true;
         }
     }
 }

@@ -4,11 +4,14 @@
 
 ## Bibliotekssystem
 
-Det här projektet är ett enkelt bibliotekssystem som hanterar böcker, medlemmar, utlåning och återlämning.  
-Systemet bygger på en relationsdatabas där varje lån kopplar en bok till en medlem under en begränsad period.
+Det här projektet är ett konsolbaserat bibliotekssystem som hanterar böcker, medlemmar, utlåning och återlämning.
+Systemet bygger på en relationsdatabas där varje lån kopplar en bok till en medlem under en bestämd period.
 
-Lösningen stödjer registrering av nya lån, återlämning av böcker, visning av aktiva lån samt historik över tidigare lån.  
-Fokus har legat på att modellera databasen korrekt, säkerställa dataintegritet och visa hur transaktioner, indexering och grundläggande konkurrenshantering fungerar i praktiken.
+Applikationen innehåller både användarflöden och en administrativ meny för hantering av böcker, medlemmar och lån.
+Administratören kan bland annat se aktiva och historiska lån, hantera sena lån, blockera eller avblockera medlemmar samt justera lånedatum vid behov.
+
+Fokus har legat på korrekt databasmodellering och dataintegritet.
+Genom transaktioner, index, vyer, lagrade procedurer och kontroller i applikationsflödet säkerställs att ogiltiga eller otillåtna lån inte kan skapas.
 
 ---
 
@@ -161,7 +164,6 @@ Testet visade att:
 ---
 
 ## Reflektion – optimering och dataintegritet
-
 Projektet fokuserar på korrekt och stabil databasdesign snarare än storskalig optimering.  
 Index, transaktioner och låsning har analyserats för att visa hur SQL Server säkerställer konsekvent data och korrekt beteende även vid samtidiga operationer.
 
@@ -169,6 +171,80 @@ Index, transaktioner och låsning har analyserats för att visa hur SQL Server s
 
 ### 2025-12-17
 - Utökade konsolapplikationen med en sammanhållen menystruktur.
-- Implementerade återanvändbar MenuBuilder.
-- Förbättrade Delete Member, Delete Book och Force Return med tydlig status.
-- Lade till IntroScreen och ExitScreen för professionell helhetsupplevelse.
+- Implementerade återanvändbar `MenuBuilder`.
+- Förbättrade `DeleteMember`, `DeleteBook` och `ForceReturn` med tydlig status.
+- Lade till `IntroScreen` och `ExitScreen` för en mer professionell helhetsupplevelse.
+
+---
+
+### 2025-12-18 – 2025-12-29
+## Utökad lånelogik, medlemsblockering och strukturförbättringar
+
+Under denna period vidareutvecklades både databasen och konsolapplikationen med fokus på dataintegritet, administration och tydligare arkitektur.
+
+### Medlemsblockering
+- Utökade `Member` med attributet `IsBlocked`.
+- Uppdaterade databasen via `ALTER TABLE`.
+- Uppdaterade ER-modellen så att blockstatus ingår i medlemsentiteten.
+- Implementerade kontroll vid lånerregistrering:
+  - blockerade medlemmar kan inte låna böcker
+  - kontroll sker innan transaktion startas
+
+### Medlemsblockering reflektion 
+Dataintegriteten säkras genom att blockstatusen ligger på medlemsnivå och alltid kontrolleras
+innan ett nytt lån skapas. På så sätt kan en blockerad medlem inte låna böcker, vilket gör att 
+felaktiga eller otillåtna lån stoppas direkt i flödet och inte kan ta sig in i databasen
+
+
+### SQL-samling och databasexport
+- Samlade samtliga relevanta queries i:
+  - [Queries.sql](schema/Queries.sql)
+- Exporterade databasen inklusive schema, data, index och triggers:
+  - [LibraryDB_schema_and_data.sql](schema/LibraryDB_schema_and_data.sql)
+
+### Struktur och arkitektur
+- Tydligare uppdelning mellan:
+  - `menus` – ansvarar endast för navigation
+  - `services` – innehåller all affärslogik
+- Avvecklade överlappande `AdminService`-logik till respektive service:
+  - `BookService`
+  - `MemberService`
+  - `LoanService`
+  - `UserService`
+- Rensade menyer från duplicerad och onödig logik.
+- Flyttade gemensam logout-bekräftelse till helper.
+
+### Konsolupplevelse
+- Förbättrade feedback vid:
+  - blockering och avblockering av medlemmar
+  - nekade lån
+  - administrativa åtgärder
+
+---
+	 
+### 2025-12-30  
+## Kodstädning, helpers och dokumentationsjusteringar
+
+Arbetet fokuserade på att städa upp kodbasen, förbättra återanvändbarhet och 
+säkerställa att dokumentationen korrekt speglar den färdiga lösningen.
+
+### Kodstädning
+- Identifierade och tog bort oanvänd kod, metoder och klasser utan referenser.
+- Rensade bort överflödiga helpers och logik som inte längre används.
+- Säkerställde att kvarvarande kod har tydligt ansvar och faktisk användning.
+- Förbättrade läsbarhet och underhållbarhet utan att förändra funktionalitet.
+
+### Meny- och UI-förbättringar
+- Justerade inmatningsflöden för att undvika dubbla symboler och visuella artefakter.
+- Säkerställde konsekvent beteende vid ESC och exit-flöden.
+
+### ER-diagram och dokumentation
+- Ersatte tidigare ER-diagram som var ofullständigt.
+- Lade in ett uppdaterat och helt korrekt ER-diagram som speglar aktuell databasmodell.
+
+#### Dokumentation
+- [ER-diagram – uppdaterad och korrekt modell](docs/images/ER.png)
+
+### Reflektion
+Genom kodstädning och strukturförbättringar har lösningen blivit mer robust, lättare att förstå och enklare att vidareutveckla.  
+Att konsekvent använda helpers och ta bort oanvänd kod minskar risken för fel och bidrar till en tydligare och mer professionell arkitektur.

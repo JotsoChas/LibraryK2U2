@@ -304,5 +304,84 @@ namespace LibraryK2U2.services
                 .CloseAfterSelection()
                 .Run();
         }
+        public void BlockMember()
+        {
+            using var db = new LibraryDBContext();
+
+            var members = db.Members
+                .OrderBy(m => m.MemberId)
+                .ToList();
+
+            if (!members.Any())
+            {
+                ConsoleHelper.Info("No members found");
+                ConsoleHelper.Pause();
+                return;
+            }
+
+            var menu = new MenuBuilder("BLOCK MEMBER");
+
+            foreach (var m in members)
+            {
+                if (m.IsBlocked)
+                    continue;
+
+                var memberId = m.MemberId;
+
+                menu.Add(
+                    $"{m.MemberId,3} | {m.FirstName} {m.LastName}",
+                    () =>
+                    {
+                        m.IsBlocked = true;
+                        db.SaveChanges();
+
+                        Console.Clear();
+                        ConsoleHelper.Success("Member blocked");
+                        Console.WriteLine($"Member: {m.FirstName} {m.LastName}");
+                        ConsoleHelper.Pause();
+                    });
+            }
+
+            menu.Back().Run();
+        }
+
+        public void UnblockMember()
+        {
+            using var db = new LibraryDBContext();
+
+            var blockedMembers = db.Members
+                .Where(m => m.IsBlocked)
+                .OrderBy(m => m.MemberId)
+                .ToList();
+
+            if (!blockedMembers.Any())
+            {
+                ConsoleHelper.Info("No blocked members");
+                ConsoleHelper.Pause();
+                return;
+            }
+
+            var menu = new MenuBuilder("UNBLOCK MEMBER");
+
+            foreach (var m in blockedMembers)
+            {
+                var memberId = m.MemberId;
+
+                menu.Add(
+                    $"{m.MemberId} | {m.FirstName} {m.LastName}",
+                    () =>
+                    {
+                        m.IsBlocked = false;
+                        db.SaveChanges();
+
+                        Console.Clear();
+                        ConsoleHelper.Success("Member unblocked");
+                        Console.WriteLine($"Member: {m.FirstName} {m.LastName}");
+                        ConsoleHelper.Pause();
+                    });
+            }
+
+            menu.Back().Run();
+        }
     }
 }
