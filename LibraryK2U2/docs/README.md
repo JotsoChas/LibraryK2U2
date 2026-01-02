@@ -13,6 +13,12 @@ Administratören kan bland annat se aktiva och historiska lån, hantera sena lå
 Fokus har legat på korrekt databasmodellering och dataintegritet.
 Genom transaktioner, index, vyer, lagrade procedurer och kontroller i applikationsflödet säkerställs att ogiltiga eller otillåtna lån inte kan skapas.
 
+Denna README innehåller den fullständiga tekniska dokumentationen och arbetsloggen.
+En mer översiktlig projektbeskrivning, installationsguide och körinstruktioner finns i projektets GitHub-README.
+
+👉 [Projekt README](../README.md)
+
+
 ---
 
 ## Dokumentation och arbetslogg
@@ -40,12 +46,12 @@ Genom transaktioner, index, vyer, lagrade procedurer och kontroller i applikatio
 - Skrev Query Designer.
 
 #### Dokumentation
-- [Query Designer – lån och återlämningar](docs/images/queries/Query_AllLoansAndReturns_Result.jpg)
-- [Query Designer – bokinformation](docs/images/queries/Query_BookInformation_Result.jpg)
+- [Query Designer - lån och återlämningar](docs/images/queries/Query_AllLoansAndReturns_Result.jpg)
+- [Query Designer - bokinformation](docs/images/queries/Query_BookInformation_Result.jpg)
 
 ---
 
-### 2025-11-26 – 2025-12-10
+### 2025-11-26 - 2025-12-10
 - Skapade två views:
   - `v_ActiveLoans` (ReturnDate IS NULL)
   - `v_ReturnedLoans` (ReturnDate IS NOT NULL)
@@ -55,15 +61,15 @@ Genom transaktioner, index, vyer, lagrade procedurer och kontroller i applikatio
 - [v_ReturnedLoans.sql](views/v_ReturnedLoans.sql)
 
 - Skapade två stored procedures:
-  - `RegisterLoan` – lånar bok och sätter DueDate +14 dagar
-  - `ReturnBook` – återlämnar bok och sätter ReturnDate
+  - `RegisterLoan` - lånar bok och sätter DueDate +14 dagar
+  - `ReturnBook` - återlämnar bok och sätter ReturnDate
 
 #### Dokumentation
 - [sp_RegisterLoan.sql](procedures/sp_RegisterLoan.sql)
 - [sp_ReturnBook.sql](procedures/sp_ReturnBook.sql)
 
 - Skapade trigger:
-  - `trg_OnReturnBook` – aktiveras när ReturnDate uppdateras
+  - `trg_OnReturnBook` - aktiveras när ReturnDate uppdateras
 
 #### Dokumentation
 - [triggers.sql](schema/triggers.sql)
@@ -156,14 +162,14 @@ Testet visade att:
 
 #### Dokumentation
 - [Val av bok utan aktivt lån](docs/images/concurrency/concurrency_01_find_available_book.jpg)
-- [Session A – lås](docs/images/concurrency/concurrency_02_session_a_lock_open_tran.jpg)
-- [Session B – blockerad](docs/images/concurrency/concurrency_03_session_b_blocked.jpg)
-- [Session A – COMMIT](docs/images/concurrency/concurrency_04_session_a_commit.jpg)
+- [Session A - lås](docs/images/concurrency/concurrency_02_session_a_lock_open_tran.jpg)
+- [Session B -  blockerad](docs/images/concurrency/concurrency_03_session_b_blocked.jpg)
+- [Session A -  COMMIT](docs/images/concurrency/concurrency_04_session_a_commit.jpg)
 - [Verifiering av ett aktivt lån](docs/images/concurrency/concurrency_05_verify_single_active_loan.jpg)
 
 ---
 
-## Reflektion – optimering och dataintegritet
+## Reflektion - optimering och dataintegritet
 Projektet fokuserar på korrekt och stabil databasdesign snarare än storskalig optimering.  
 Index, transaktioner och låsning har analyserats för att visa hur SQL Server säkerställer konsekvent data och korrekt beteende även vid samtidiga operationer.
 
@@ -177,7 +183,7 @@ Index, transaktioner och låsning har analyserats för att visa hur SQL Server s
 
 ---
 
-### 2025-12-18 – 2025-12-29
+### 2025-12-18 - 2025-12-29
 ## Utökad lånelogik, medlemsblockering och strukturförbättringar
 
 Under denna period vidareutvecklades både databasen och konsolapplikationen med fokus på dataintegritet, administration och tydligare arkitektur.
@@ -204,8 +210,8 @@ felaktiga eller otillåtna lån stoppas direkt i flödet och inte kan ta sig in 
 
 ### Struktur och arkitektur
 - Tydligare uppdelning mellan:
-  - `menus` – ansvarar endast för navigation
-  - `services` – innehåller all affärslogik
+  - `menus` - ansvarar endast för navigation
+  - `services` - innehåller all affärslogik
 - Avvecklade överlappande `AdminService`-logik till respektive service:
   - `BookService`
   - `MemberService`
@@ -243,8 +249,36 @@ säkerställa att dokumentationen korrekt speglar den färdiga lösningen.
 - Lade in ett uppdaterat och helt korrekt ER-diagram som speglar aktuell databasmodell.
 
 #### Dokumentation
-- [ER-diagram – uppdaterad och korrekt modell](docs/images/ER.png)
+- [ER-diagram - uppdaterad och korrekt modell](docs/images/ER.png)
 
 ### Reflektion
 Genom kodstädning och strukturförbättringar har lösningen blivit mer robust, lättare att förstå och enklare att vidareutveckla.  
 Att konsekvent använda helpers och ta bort oanvänd kod minskar risken för fel och bidrar till en tydligare och mer professionell arkitektur.
+
+---
+
+### 2026-01-02
+## README-struktur, dokumentationskoppling och förtydliganden
+
+Dokumentationen delades upp i två tydliga nivåer för att förbättra läsbarhet och struktur.
+
+- Skapade en tydlig uppdelning mellan:
+  - GitHub-README (översikt, installation, körning)
+  - Docs-README (teknisk dokumentation och arbetslogg)
+- Länkade README-filerna till varandra för enkel navigering.
+
+### Databasdokumentation
+- Förtydligade att den fullständiga databasexporten (`LibraryDB_schema_and_data.sql`) räcker för att köra projektet.
+- Dokumenterade att övriga SQL-filer i `schema`, `views` och `procedures` finns för transparens, analys och referens, men inte krävs för drift.
+
+### Installation och testförutsättningar
+- Förtydligade installationsflödet och koppling till LocalDB.
+- Dokumenterade standardkonto för administrativ testning:
+  - användarnamn: `admin`
+  - PIN: `0000`
+
+Syftet med ändringarna var att göra projektet lättare att förstå, testa och granska, utan att duplicera teknisk information.
+
+---
+_Joco Borghol_
+---
