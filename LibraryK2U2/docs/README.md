@@ -16,7 +16,7 @@ Genom transaktioner, index, vyer, lagrade procedurer och kontroller i applikatio
 Denna README innehåller den fullständiga tekniska dokumentationen och arbetsloggen.
 En mer översiktlig projektbeskrivning, installationsguide och körinstruktioner finns i projektets GitHub-README.
 
-👉 [Projekt README](../README.md)
+👉 [Projekt README](../../README.md)
 
 
 ---
@@ -27,7 +27,7 @@ En mer översiktlig projektbeskrivning, installationsguide och körinstruktioner
 - Skapade ER-modell med tabellerna Book, Member och Loan.
 
 #### Dokumentation
-- [ER-diagram över Book, Member och Loan](docs/images/ER.png)
+- [ER-diagram över Book, Member och Loan](images/ER.png)
 
 ---
 
@@ -46,8 +46,8 @@ En mer översiktlig projektbeskrivning, installationsguide och körinstruktioner
 - Skrev Query Designer.
 
 #### Dokumentation
-- [Query Designer - lån och återlämningar](docs/images/queries/Query_AllLoansAndReturns_Result.jpg)
-- [Query Designer - bokinformation](docs/images/queries/Query_BookInformation_Result.jpg)
+- [Query Designer - lån och återlämningar](images/queries/Query_AllLoansAndReturns_Result.jpg)
+- [Query Designer - bokinformation](images/queries/Query_BookInformation_Result.jpg)
 
 ---
 
@@ -57,22 +57,22 @@ En mer översiktlig projektbeskrivning, installationsguide och körinstruktioner
   - `v_ReturnedLoans` (ReturnDate IS NOT NULL)
 
 #### Dokumentation
-- [v_ActiveLoans.sql](views/v_ActiveLoans.sql)
-- [v_ReturnedLoans.sql](views/v_ReturnedLoans.sql)
+- [v_ActiveLoans.sql](../views/v_ActiveLoans.sql)
+- [v_ReturnedLoans.sql](../views/v_ReturnedLoans.sql)
 
 - Skapade två stored procedures:
   - `RegisterLoan` - lånar bok och sätter DueDate +14 dagar
   - `ReturnBook` - återlämnar bok och sätter ReturnDate
 
 #### Dokumentation
-- [sp_RegisterLoan.sql](procedures/sp_RegisterLoan.sql)
-- [sp_ReturnBook.sql](procedures/sp_ReturnBook.sql)
+- [sp_RegisterLoan.sql](../procedures/sp_RegisterLoan.sql)
+- [sp_ReturnBook.sql](../procedures/sp_ReturnBook.sql)
 
 - Skapade trigger:
   - `trg_OnReturnBook` - aktiveras när ReturnDate uppdateras
 
 #### Dokumentation
-- [triggers.sql](schema/triggers.sql)
+- [triggers.sql](../schema/triggers.sql)
 
 - Strukturerade mappstruktur för SQL-filer.
 
@@ -84,12 +84,12 @@ En mer översiktlig projektbeskrivning, installationsguide och körinstruktioner
 - Verifierade att tabellen Book scaffoldades korrekt.
 
 #### Dokumentation
-- [LibraryDBContext.cs](data/LibraryDBContext.cs)
-- [Book.cs](models/Book.cs)
-- [Loan.cs](models/Loan.cs)
-- [Member.cs](models/Member.cs)
-- [ActiveLoan.cs](models/ActiveLoan.cs)
-- [ReturnedLoan.cs](models/ReturnedLoan.cs)
+- [LibraryDBContext.cs](../data/LibraryDBContext.cs)
+- [Book.cs](../models/Book.cs)
+- [Loan.cs](../models/Loan.cs)
+- [Member.cs](../models/Member.cs)
+- [ActiveLoan.cs](../models/ActiveLoan.cs)
+- [ReturnedLoan.cs](../models/ReturnedLoan.cs)
 
 ---
 
@@ -99,8 +99,8 @@ En mer översiktlig projektbeskrivning, installationsguide och körinstruktioner
 - Bekräftade stabil databasanslutning.
 
 #### Dokumentation
-- [Program.cs](Program.cs)
-- [LibraryDBContext.cs](data/LibraryDBContext.cs)
+- [Program.cs](../Program.cs)
+- [LibraryDBContext.cs](../data/LibraryDBContext.cs)
 
 ---
 
@@ -121,10 +121,10 @@ Testerna genomfördes genom att:
 - Databasen hålls konsekvent i båda fallen.
 
 #### Dokumentation
-- [Registrering av lån med COMMIT](docs/images/transactions/loan_commit.png)
-- [Kontroll efter COMMIT](docs/images/transactions/loan_after_commit.jpg)
-- [Transaktion med ROLLBACK](docs/images/transactions/loan_rollback.jpg)
-- [Verifiering efter ROLLBACK](docs/images/transactions/loan_transaction_after_rollback.jpg)
+- [Registrering av lån med COMMIT](images/transactions/loan_commit.png)
+- [Kontroll efter COMMIT](images/transactions/loan_after_commit.jpg)
+- [Transaktion med ROLLBACK](images/transactions/loan_rollback.jpg)
+- [Verifiering efter ROLLBACK](images/transactions/loan_transaction_after_rollback.jpg)
 
 ---
 
@@ -144,9 +144,9 @@ Testerna omfattade:
 - SQL Server väljer plan baserat på kostnad.
 
 #### Dokumentation
-- [Execution plan utan index](docs/images/indexes/index_before_returndate.jpeg)
-- [Execution plan med nonclustered index](docs/images/indexes/index_after_returndate.jpeg)
-- [Execution plan med filtered index](docs/images/indexes/index_after_filtered_returndate.jpg)
+- [Execution plan utan index](images/indexes/index_before_returndate.jpeg)
+- [Execution plan med nonclustered index](images/indexes/index_after_returndate.jpeg)
+- [Execution plan med filtered index](images/indexes/index_after_filtered_returndate.jpg)
 
 ---
 
@@ -161,11 +161,11 @@ Testet visade att:
 - dataintegriteten bibehålls
 
 #### Dokumentation
-- [Val av bok utan aktivt lån](docs/images/concurrency/concurrency_01_find_available_book.jpg)
-- [Session A - lås](docs/images/concurrency/concurrency_02_session_a_lock_open_tran.jpg)
-- [Session B -  blockerad](docs/images/concurrency/concurrency_03_session_b_blocked.jpg)
-- [Session A -  COMMIT](docs/images/concurrency/concurrency_04_session_a_commit.jpg)
-- [Verifiering av ett aktivt lån](docs/images/concurrency/concurrency_05_verify_single_active_loan.jpg)
+- [Val av bok utan aktivt lån](images/concurrency/concurrency_01_find_available_book.jpg)
+- [Session A - lås](images/concurrency/concurrency_02_session_a_lock_open_tran.jpg)
+- [Session B -  blockerad](images/concurrency/concurrency_03_session_b_blocked.jpg)
+- [Session A -  COMMIT](images/concurrency/concurrency_04_session_a_commit.jpg)
+- [Verifiering av ett aktivt lån](images/concurrency/concurrency_05_verify_single_active_loan.jpg)
 
 ---
 
@@ -204,9 +204,9 @@ felaktiga eller otillåtna lån stoppas direkt i flödet och inte kan ta sig in 
 
 ### SQL-samling och databasexport
 - Samlade samtliga relevanta queries i:
-  - [Queries.sql](schema/Queries.sql)
+  - [Queries.sql](../schema/Queries.sql)
 - Exporterade databasen inklusive schema, data, index och triggers:
-  - [LibraryDB_schema_and_data.sql](schema/LibraryDB_schema_and_data.sql)
+  - [LibraryDB_schema_and_data.sql](../schema/LibraryDB_schema_and_data.sql)
 
 ### Struktur och arkitektur
 - Tydligare uppdelning mellan:
@@ -249,7 +249,7 @@ säkerställa att dokumentationen korrekt speglar den färdiga lösningen.
 - Lade in ett uppdaterat och helt korrekt ER-diagram som speglar aktuell databasmodell.
 
 #### Dokumentation
-- [ER-diagram - uppdaterad och korrekt modell](docs/images/ER.png)
+- [ER-diagram - uppdaterad och korrekt modell](images/ER.png)
 
 ### Reflektion
 Genom kodstädning och strukturförbättringar har lösningen blivit mer robust, lättare att förstå och enklare att vidareutveckla.  
