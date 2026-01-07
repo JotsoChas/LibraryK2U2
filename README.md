@@ -43,7 +43,7 @@ Through transactions, indexes, views, stored procedures and application-level ch
 
 Below is a screenshot of the console-based user interface used in the application.
 
-![Console application screenshot](docs/images/Screenshot-Console.jpg)
+![Console application screenshot](docs/images/Screenshot-Consol.jpg)
 
 ---
 
